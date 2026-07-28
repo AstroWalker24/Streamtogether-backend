@@ -1,20 +1,19 @@
 package app
 
 import (
-	"log/slog"
-
-	"github.com/AstroWalker24/Streamtogether-backend/internal/config"
-	"github.com/AstroWalker24/Streamtogether-backend/internal/server"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/redis/go-redis/v9"
+    "github.com/redis/go-redis/v9"
+
+    "github.com/AstroWalker24/Streamtogether-backend/internal/config"
+    "github.com/AstroWalker24/Streamtogether-backend/internal/logger"
+    "github.com/AstroWalker24/Streamtogether-backend/internal/server"
 )
 
-
 type App struct {
-	cfg *config.Config
-	log *slog.Logger
-	db *pgxpool.Pool
-	redis *redis.Client
-	server *server.Server
+    cfg    *config.Config
+    log    logger.Logger
+    db     *pgxpool.Pool
+    redis  *redis.Client
+    server *server.Server
 }
 

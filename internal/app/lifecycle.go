@@ -3,10 +3,11 @@ package app
 import (
     "context"
     "fmt"
-    "log/slog"
     "os"
     "os/signal"
     "syscall"
+
+    "github.com/AstroWalker24/Streamtogether-backend/internal/logger"
 )
 
 
@@ -14,7 +15,7 @@ func (a *App) Run() error {
     serverErr := make(chan error, 1)
 
     go func() {
-        a.log.Info("http server starting", "addr", a.cfg.App.Address())
+        a.log.Info("http server starting", logger.String("addr", a.cfg.App.Address()))
         serverErr <- a.Start()
     }()
 
@@ -25,7 +26,7 @@ func (a *App) Run() error {
     case err := <-serverErr:
         return fmt.Errorf("app: server error: %w", err)
     case sig := <-quit:
-        a.log.Info("shutdown signal received", "signal", sig.String())
+        a.log.Info("shutdown signal received", logger.String("signal", sig.String()))
     }
 
     return a.Shutdown()
@@ -44,11 +45,11 @@ func (a *App) Shutdown() error {
     defer cancel()
 
     if err := a.server.Shutdown(ctx); err != nil {
-        a.log.Error("http server shutdown error", slog.Any("error", err))
+        a.log.Error("http server shutdown error", logger.Err(err))
     }
 
     if err := a.redis.Close(); err != nil {
-        a.log.Error("redis close error", slog.Any("error", err))
+        a.log.Error("redis close error", logger.Err(err))
     } else {
         a.log.Info("redis connection closed")
     }
