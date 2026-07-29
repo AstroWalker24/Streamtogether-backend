@@ -54,8 +54,7 @@ func (a *App) Shutdown() error {
         a.log.Info("redis connection closed")
     }
 
-    a.db.Close()
-    a.log.Info("postgres connection closed")
+    a.db.Close() // logs internally: "closing postgres pool" + "postgres pool closed"
 
     a.log.Info("application stopped")
     return nil
