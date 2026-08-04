@@ -1,21 +1,11 @@
 package routes
 
 import (
-	"net/http"
-
-	"github.com/AstroWalker24/Streamtogether-backend/internal/handlers"
+	"github.com/AstroWalker24/Streamtogether-backend/internal/health"
+	"github.com/gofiber/fiber/v2"
 )
 
-
-
-func Register(health *handlers.HealthHandler) http.Handler {
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /health/ready", health.Ready)
-	mux.HandleFunc("GET /health/live", health.Live)
-	return mux
+// Register attaches all application routes to the Fiber router.
+func Register(r fiber.Router, healthHandler *health.Handler) {
+	health.RegisterRoutes(r, healthHandler)
 }
-
-
-
-
-

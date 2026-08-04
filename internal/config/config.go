@@ -44,6 +44,12 @@ type ServerConfig struct {
 	WriteTimeout    time.Duration
 	IdleTimeout     time.Duration
 	ShutdownTimeout time.Duration
+	BodyLimit       int
+	ReadBufferSize  int
+	WriteBufferSize int
+	CaseSensitive   bool
+	StrictRouting   bool
+	Immutable       bool
 }
 
 type DatabaseConfig struct {

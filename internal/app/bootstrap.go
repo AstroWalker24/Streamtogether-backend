@@ -6,7 +6,7 @@ import (
 
 	"github.com/AstroWalker24/Streamtogether-backend/internal/config"
 	"github.com/AstroWalker24/Streamtogether-backend/internal/database"
-	"github.com/AstroWalker24/Streamtogether-backend/internal/handlers"
+	"github.com/AstroWalker24/Streamtogether-backend/internal/health"
 	"github.com/AstroWalker24/Streamtogether-backend/internal/logger"
 	redisx "github.com/AstroWalker24/Streamtogether-backend/internal/redis"
 	"github.com/AstroWalker24/Streamtogether-backend/internal/routes"
@@ -45,13 +45,26 @@ func New() (*App, error) {
 		return nil, fmt.Errorf("app: init redis: %w", err)
 	}
 
-	// 5. Routes + handlers
-	healthHandler := handlers.NewHealthHandler()
-	handler := routes.Register(healthHandler)
+	// 5. HTTP Server
+	srv, err := server.New(cfg, log)
+	if err != nil {
+		_ = redisInstance.Close()
+		db.Close()
+		return nil, fmt.Errorf("app: init server: %w", err)
+	}
 
-	// 6. HTTP Server
-	srv := server.New(cfg.Server, cfg.App, handler)
-	log.Info("http server configured", logger.String("addr", cfg.App.Address()))
+	// 6. Health checkers — required dependencies that must be up for /ready
+	checkers := []health.Checker{
+		health.NewChecker("postgres", true, db.Health),
+		health.NewChecker("redis", true, redisInstance.Health),
+	}
+
+	// 7. Health package wiring
+	healthSvc := health.NewService(cfg, log, checkers...)
+	healthHandler := health.NewHandler(healthSvc)
+
+	// 8. Route registration
+	routes.Register(srv.App(), healthHandler)
 
 	return &App{
 		cfg:    cfg,

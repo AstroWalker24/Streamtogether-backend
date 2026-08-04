@@ -15,7 +15,7 @@ func (a *App) Run() error {
 
 	go func() {
 		a.log.Info("http server starting", logger.String("addr", a.cfg.App.Address()))
-		serverErr <- a.Start()
+		serverErr <- a.Start(context.Background())
 	}()
 
 	quit := make(chan os.Signal, 1)
@@ -31,8 +31,8 @@ func (a *App) Run() error {
 	return a.Shutdown()
 }
 
-func (a *App) Start() error {
-	return a.server.Start()
+func (a *App) Start(ctx context.Context) error {
+	return a.server.Start(ctx)
 }
 
 func (a *App) Shutdown() error {

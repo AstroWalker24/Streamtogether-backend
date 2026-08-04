@@ -111,6 +111,13 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("FEATURE_VOICE", false)
 	v.SetDefault("FEATURE_AI", false)
 
+	v.SetDefault("SERVER_BODY_LIMIT", 4*1024*1024)
+	v.SetDefault("SERVER_READ_BUFFER_SIZE", 4096)
+	v.SetDefault("SERVER_WRITE_BUFFER_SIZE", 4096)
+	v.SetDefault("SERVER_CASE_SENSITIVE", false)
+	v.SetDefault("SERVER_STRICT_ROUTING", false)
+	v.SetDefault("SERVER_IMMUTABLE", false)
+
 }
 
 func populate(v *viper.Viper, env Environment) (*Config, error) {
@@ -175,6 +182,12 @@ func populate(v *viper.Viper, env Environment) (*Config, error) {
 			WriteTimeout:    writeTimeout,
 			IdleTimeout:     idleTimeout,
 			ShutdownTimeout: shutdownTimeout,
+			BodyLimit:       v.GetInt("SERVER_BODY_LIMIT"),
+			ReadBufferSize:  v.GetInt("SERVER_READ_BUFFER_SIZE"),
+			WriteBufferSize: v.GetInt("SERVER_WRITE_BUFFER_SIZE"),
+			CaseSensitive:   v.GetBool("SERVER_CASE_SENSITIVE"),
+			StrictRouting:   v.GetBool("SERVER_STRICT_ROUTING"),
+			Immutable:       v.GetBool("SERVER_IMMUTABLE"),
 		},
 		Database: DatabaseConfig{
 			Host:            v.GetString("POSTGRES_HOST"),
