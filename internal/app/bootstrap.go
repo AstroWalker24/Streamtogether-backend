@@ -8,6 +8,7 @@ import (
 	"github.com/AstroWalker24/Streamtogether-backend/internal/database"
 	"github.com/AstroWalker24/Streamtogether-backend/internal/handlers"
 	"github.com/AstroWalker24/Streamtogether-backend/internal/logger"
+	redisx "github.com/AstroWalker24/Streamtogether-backend/internal/redis"
 	"github.com/AstroWalker24/Streamtogether-backend/internal/routes"
 	"github.com/AstroWalker24/Streamtogether-backend/internal/server"
 )
@@ -38,12 +39,11 @@ func New() (*App, error) {
 	}
 
 	// 4. Redis
-	redisClient, err := database.NewRedis(ctx, cfg.Redis)
+	redisInstance, err := redisx.New(ctx, cfg, log)
 	if err != nil {
 		db.Close()
 		return nil, fmt.Errorf("app: init redis: %w", err)
 	}
-	log.Info("redis connected", logger.String("addr", cfg.Redis.Address()))
 
 	// 5. Routes + handlers
 	healthHandler := handlers.NewHealthHandler()
@@ -57,7 +57,7 @@ func New() (*App, error) {
 		cfg:    cfg,
 		log:    log,
 		db:     db,
-		redis:  redisClient,
+		redis:  redisInstance,
 		server: srv,
 	}, nil
 }

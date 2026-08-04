@@ -5,14 +5,15 @@ import (
 	"os"
 	"strings"
 	"time"
+
 	"github.com/spf13/viper"
 )
 
 func Load() (*Config, error) {
-	v := viper.New() 
+	v := viper.New()
 
-	setDefaults(v) 
-	env:= resolveEnvironment()
+	setDefaults(v)
+	env := resolveEnvironment()
 
 	err := loadEnvFile(v, env)
 	if err != nil {
@@ -28,17 +29,17 @@ func Load() (*Config, error) {
 	if validationError != nil {
 		return nil, fmt.Errorf("config: validation failed: %w", validationError)
 	}
-	return cfg, nil 
+	return cfg, nil
 }
 
 func resolveEnvironment() Environment {
 	switch Environment(strings.ToLower(os.Getenv("APP_ENV"))) {
 	case EnvTest:
-		return EnvTest 
+		return EnvTest
 	case EnvProduction:
 		return EnvProduction
 	default:
-		return EnvDevelopment 
+		return EnvDevelopment
 	}
 }
 
@@ -52,14 +53,13 @@ func loadEnvFile(v *viper.Viper, env Environment) error {
 		if ok {
 			return nil
 		}
-		if (os.IsNotExist(err)) {
+		if os.IsNotExist(err) {
 			return nil
 		}
 		return err
 	}
 	return nil
 }
-
 
 func setDefaults(v *viper.Viper) {
 	v.SetDefault("APP_NAME", "Streamtogether Backend")
@@ -83,6 +83,13 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("REDIS_HOST", "localhost")
 	v.SetDefault("REDIS_PORT", 6379)
 	v.SetDefault("REDIS_DB", 0)
+	v.SetDefault("REDIS_POOL_SIZE", 10)
+	v.SetDefault("REDIS_MIN_IDLE_CONNS", 2)
+	v.SetDefault("REDIS_DIAL_TIMEOUT", "5s")
+	v.SetDefault("REDIS_READ_TIMEOUT", "3s")
+	v.SetDefault("REDIS_WRITE_TIMEOUT", "3s")
+	v.SetDefault("REDIS_POOL_TIMEOUT", "4s")
+	v.SetDefault("REDIS_MAX_RETRIES", 3)
 
 	v.SetDefault("JWT_ACCESS_TOKEN_EXPIRY", "15m")
 	v.SetDefault("JWT_REFRESH_TOKEN_EXPIRY", "168h")
@@ -101,9 +108,8 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("PROMETHEUS_ENABLED", true)
 
 	v.SetDefault("FEATURE_CHAT", true)
-	v.SetDefault("FEATURE_VOICE",false)
+	v.SetDefault("FEATURE_VOICE", false)
 	v.SetDefault("FEATURE_AI", false)
-
 
 }
 
@@ -128,6 +134,22 @@ func populate(v *viper.Viper, env Environment) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	redisDialTimeout, err := parseDuration(v, "REDIS_DIAL_TIMEOUT")
+	if err != nil {
+		return nil, err
+	}
+	redisReadTimeout, err := parseDuration(v, "REDIS_READ_TIMEOUT")
+	if err != nil {
+		return nil, err
+	}
+	redisWriteTimeout, err := parseDuration(v, "REDIS_WRITE_TIMEOUT")
+	if err != nil {
+		return nil, err
+	}
+	redisPoolTimeout, err := parseDuration(v, "REDIS_POOL_TIMEOUT")
+	if err != nil {
+		return nil, err
+	}
 	accessExpiry, err := parseDuration(v, "JWT_ACCESS_TOKEN_EXPIRY")
 	if err != nil {
 		return nil, err
@@ -142,65 +164,72 @@ func populate(v *viper.Viper, env Environment) (*Config, error) {
 	}
 	cfg := &Config{
 		App: AppConfig{
-			Name: v.GetString("APP_NAME"),
+			Name:        v.GetString("APP_NAME"),
 			Environment: env,
-			Version: v.GetString("APP_VERSION"),
-			Host: v.GetString("APP_HOST"),
-			Port: v.GetInt("APP_PORT"),
+			Version:     v.GetString("APP_VERSION"),
+			Host:        v.GetString("APP_HOST"),
+			Port:        v.GetInt("APP_PORT"),
 		},
 		Server: ServerConfig{
 			ReadTimeout:     readTimeout,
-            WriteTimeout:    writeTimeout,
-            IdleTimeout:     idleTimeout,
-            ShutdownTimeout: shutdownTimeout,
+			WriteTimeout:    writeTimeout,
+			IdleTimeout:     idleTimeout,
+			ShutdownTimeout: shutdownTimeout,
 		},
 		Database: DatabaseConfig{
-            Host:            v.GetString("POSTGRES_HOST"),
-            Port:            v.GetInt("POSTGRES_PORT"),
-            User:            v.GetString("POSTGRES_USER"),
-            Password:        v.GetString("POSTGRES_PASSWORD"),
-            Database:        v.GetString("POSTGRES_DB"),
-            SSLMode:         v.GetString("POSTGRES_SSLMODE"),
-            MaxOpenConns:    v.GetInt("POSTGRES_MAX_OPEN_CONNS"),
-            MaxIdleConns:    v.GetInt("POSTGRES_MAX_IDLE_CONNS"),
-            ConnMaxLifetime: connMaxLifetime,
-        },
+			Host:            v.GetString("POSTGRES_HOST"),
+			Port:            v.GetInt("POSTGRES_PORT"),
+			User:            v.GetString("POSTGRES_USER"),
+			Password:        v.GetString("POSTGRES_PASSWORD"),
+			Database:        v.GetString("POSTGRES_DB"),
+			SSLMode:         v.GetString("POSTGRES_SSLMODE"),
+			MaxOpenConns:    v.GetInt("POSTGRES_MAX_OPEN_CONNS"),
+			MaxIdleConns:    v.GetInt("POSTGRES_MAX_IDLE_CONNS"),
+			ConnMaxLifetime: connMaxLifetime,
+		},
 		Redis: RedisConfig{
-            Host:     v.GetString("REDIS_HOST"),
-            Port:     v.GetInt("REDIS_PORT"),
-            Password: v.GetString("REDIS_PASSWORD"),
-            DB:       v.GetInt("REDIS_DB"),
-        },
+			Host:         v.GetString("REDIS_HOST"),
+			Port:         v.GetInt("REDIS_PORT"),
+			Password:     v.GetString("REDIS_PASSWORD"),
+			DB:           v.GetInt("REDIS_DB"),
+			PoolSize:     v.GetInt("REDIS_POOL_SIZE"),
+			MinIdleConns: v.GetInt("REDIS_MIN_IDLE_CONNS"),
+			DialTimeout:  redisDialTimeout,
+			ReadTimeout:  redisReadTimeout,
+			WriteTimeout: redisWriteTimeout,
+			PoolTimeout:  redisPoolTimeout,
+			MaxRetries:   v.GetInt("REDIS_MAX_RETRIES"),
+		},
 		JWT: JWTConfig{
-            Secret:             v.GetString("JWT_SECRET"),
-            AccessTokenExpiry:  accessExpiry,
-            RefreshTokenExpiry: refreshExpiry,
-        },
+			Secret:             v.GetString("JWT_SECRET"),
+			AccessTokenExpiry:  accessExpiry,
+			RefreshTokenExpiry: refreshExpiry,
+		},
 		Logging: LoggingConfig{
-            Level:  v.GetString("LOG_LEVEL"),
-            Format: v.GetString("LOG_FORMAT"),
-        },
-        CORS: CORSConfig{
-            AllowedOrigins: splitCSV(v.GetString("CORS_ALLOWED_ORIGINS")),
-            AllowedMethods: splitCSV(v.GetString("CORS_ALLOWED_METHODS")),
-            AllowedHeaders: splitCSV(v.GetString("CORS_ALLOWED_HEADERS")),
-        },
+			Level:  v.GetString("LOG_LEVEL"),
+			Format: v.GetString("LOG_FORMAT"),
+		},
+		CORS: CORSConfig{
+			AllowedOrigins: splitCSV(v.GetString("CORS_ALLOWED_ORIGINS")),
+			AllowedMethods: splitCSV(v.GetString("CORS_ALLOWED_METHODS")),
+			AllowedHeaders: splitCSV(v.GetString("CORS_ALLOWED_HEADERS")),
+		},
 		RateLimit: RateLimitConfig{
-            Enabled:  v.GetBool("RATE_LIMIT_ENABLED"),
-            Requests: v.GetInt("RATE_LIMIT_REQUESTS"),
-            Duration: rateLimitDuration,
-        },
-        Swagger: SwaggerConfig{
-            Enabled: v.GetBool("SWAGGER_ENABLED"),
-        },
-        Monitoring: MonitoringConfig{
-            PrometheusEnabled: v.GetBool("PROMETHEUS_ENABLED"),
-        },
-        Features: FeaturesConfig{
-            Chat:  v.GetBool("FEATURE_CHAT"),
-            Voice: v.GetBool("FEATURE_VOICE"),
-            AI:    v.GetBool("FEATURE_AI"),
-        },
+			Enabled:  v.GetBool("RATE_LIMIT_ENABLED"),
+			Requests: v.GetInt("RATE_LIMIT_REQUESTS"),
+			Duration: rateLimitDuration,
+		},
+		Swagger: SwaggerConfig{
+			Enabled: v.GetBool("SWAGGER_ENABLED"),
+		},
+		Monitoring: MonitoringConfig{
+			PrometheusEnabled: v.GetBool("PROMETHEUS_ENABLED"),
+		},
+		Features: FeaturesConfig{
+			Chat:  v.GetBool("FEATURE_CHAT"),
+			Voice: v.GetBool("FEATURE_VOICE"),
+			AI:    v.GetBool("FEATURE_AI"),
+		},
 	}
 	return cfg, nil
 }
@@ -223,7 +252,7 @@ func splitCSV(s string) []string {
 	result := make([]string, 0, len(parts))
 
 	for _, p := range parts {
-		trimmed := strings.TrimSpace(p) 
+		trimmed := strings.TrimSpace(p)
 		if trimmed != "" {
 			result = append(result, trimmed)
 		}

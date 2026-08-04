@@ -5,36 +5,34 @@ import (
 	"time"
 )
 
-
-
-type Environment string 
+type Environment string
 
 const (
 	EnvDevelopment Environment = "development"
-	EnvProduction Environment = "production"
-	EnvTest Environment = "test"
+	EnvProduction  Environment = "production"
+	EnvTest        Environment = "test"
 )
 
 type Config struct {
-	App AppConfig 
-	Server ServerConfig 
-	Database DatabaseConfig
-	Redis RedisConfig 
-	JWT JWTConfig 
-	Logging LoggingConfig 
-	CORS CORSConfig
-	RateLimit RateLimitConfig
-	Swagger SwaggerConfig 
-	Monitoring MonitoringConfig 
-	Features FeaturesConfig
+	App        AppConfig
+	Server     ServerConfig
+	Database   DatabaseConfig
+	Redis      RedisConfig
+	JWT        JWTConfig
+	Logging    LoggingConfig
+	CORS       CORSConfig
+	RateLimit  RateLimitConfig
+	Swagger    SwaggerConfig
+	Monitoring MonitoringConfig
+	Features   FeaturesConfig
 }
 
 type AppConfig struct {
-	Name string 
-	Environment Environment 
-	Version string 
-	Host string 
-	Port int 
+	Name        string
+	Environment Environment
+	Version     string
+	Host        string
+	Port        int
 }
 
 func (a AppConfig) Address() string {
@@ -42,21 +40,21 @@ func (a AppConfig) Address() string {
 }
 
 type ServerConfig struct {
-	ReadTimeout time.Duration
-	WriteTimeout time.Duration
-	IdleTimeout time.Duration
+	ReadTimeout     time.Duration
+	WriteTimeout    time.Duration
+	IdleTimeout     time.Duration
 	ShutdownTimeout time.Duration
 }
 
 type DatabaseConfig struct {
-	Host string 
-	Port int 
-	User string 
-	Password string 
-	Database string 
-	SSLMode string 
-	MaxOpenConns int 
-	MaxIdleConns int 
+	Host            string
+	Port            int
+	User            string
+	Password        string
+	Database        string
+	SSLMode         string
+	MaxOpenConns    int
+	MaxIdleConns    int
 	ConnMaxLifetime time.Duration
 }
 
@@ -65,10 +63,17 @@ func (db DatabaseConfig) DSN() string {
 }
 
 type RedisConfig struct {
-	Host string 
-	Port int 
-	Password string 
-	DB int
+	Host         string
+	Port         int
+	Password     string
+	DB           int
+	PoolSize     int
+	MinIdleConns int
+	DialTimeout  time.Duration
+	ReadTimeout  time.Duration
+	WriteTimeout time.Duration
+	PoolTimeout  time.Duration
+	MaxRetries   int
 }
 
 func (r RedisConfig) Address() string {
@@ -76,25 +81,25 @@ func (r RedisConfig) Address() string {
 }
 
 type JWTConfig struct {
-	Secret string 
-	AccessTokenExpiry time.Duration
+	Secret             string
+	AccessTokenExpiry  time.Duration
 	RefreshTokenExpiry time.Duration
 }
 
 type LoggingConfig struct {
-	Level string 
+	Level  string
 	Format string
 }
 
 type CORSConfig struct {
-	AllowedOrigins []string 
-	AllowedMethods []string 
+	AllowedOrigins []string
+	AllowedMethods []string
 	AllowedHeaders []string
 }
 
 type RateLimitConfig struct {
-	Enabled bool 
-	Requests int 
+	Enabled  bool
+	Requests int
 	Duration time.Duration
 }
 
@@ -107,13 +112,7 @@ type MonitoringConfig struct {
 }
 
 type FeaturesConfig struct {
-	Chat bool
+	Chat  bool
 	Voice bool
-	AI bool
+	AI    bool
 }
-
-
-
-
-
-
