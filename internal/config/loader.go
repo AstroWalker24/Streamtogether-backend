@@ -99,6 +99,15 @@ func setDefaults(v *viper.Viper) {
 
 	v.SetDefault("CORS_ALLOWED_METHODS", "GET,POST,PUT,PATCH,DELETE,OPTIONS")
 	v.SetDefault("CORS_ALLOWED_HEADERS", "*")
+	v.SetDefault("CORS_ALLOW_CREDENTIALS", false)
+	v.SetDefault("CORS_EXPOSE_HEADERS", "")
+	v.SetDefault("CORS_MAX_AGE", 86400)
+
+	v.SetDefault("MIDDLEWARE_REQUEST_TIMEOUT", "30s")
+	v.SetDefault("MIDDLEWARE_COMPRESSION_ENABLED", true)
+	v.SetDefault("MIDDLEWARE_CSP", "default-src 'self'")
+	v.SetDefault("MIDDLEWARE_HSTS_ENABLED", false)
+	v.SetDefault("MIDDLEWARE_HSTS_MAX_AGE", 31536000)
 
 	v.SetDefault("RATE_LIMIT_ENABLED", true)
 	v.SetDefault("RATE_LIMIT_REQUESTS", 100)
@@ -154,6 +163,10 @@ func populate(v *viper.Viper, env Environment) (*Config, error) {
 		return nil, err
 	}
 	redisPoolTimeout, err := parseDuration(v, "REDIS_POOL_TIMEOUT")
+	if err != nil {
+		return nil, err
+	}
+	middlewareTimeout, err := parseDuration(v, "MIDDLEWARE_REQUEST_TIMEOUT")
 	if err != nil {
 		return nil, err
 	}
@@ -223,9 +236,19 @@ func populate(v *viper.Viper, env Environment) (*Config, error) {
 			Format: v.GetString("LOG_FORMAT"),
 		},
 		CORS: CORSConfig{
-			AllowedOrigins: splitCSV(v.GetString("CORS_ALLOWED_ORIGINS")),
-			AllowedMethods: splitCSV(v.GetString("CORS_ALLOWED_METHODS")),
-			AllowedHeaders: splitCSV(v.GetString("CORS_ALLOWED_HEADERS")),
+			AllowedOrigins:   splitCSV(v.GetString("CORS_ALLOWED_ORIGINS")),
+			AllowedMethods:   splitCSV(v.GetString("CORS_ALLOWED_METHODS")),
+			AllowedHeaders:   splitCSV(v.GetString("CORS_ALLOWED_HEADERS")),
+			AllowCredentials: v.GetBool("CORS_ALLOW_CREDENTIALS"),
+			ExposeHeaders:    splitCSV(v.GetString("CORS_EXPOSE_HEADERS")),
+			MaxAge:           v.GetInt("CORS_MAX_AGE"),
+		},
+		Middleware: MiddlewareConfig{
+			RequestTimeout:        middlewareTimeout,
+			CompressionEnabled:    v.GetBool("MIDDLEWARE_COMPRESSION_ENABLED"),
+			ContentSecurityPolicy: v.GetString("MIDDLEWARE_CSP"),
+			HSTSEnabled:           v.GetBool("MIDDLEWARE_HSTS_ENABLED"),
+			HSTSMaxAge:            v.GetInt("MIDDLEWARE_HSTS_MAX_AGE"),
 		},
 		RateLimit: RateLimitConfig{
 			Enabled:  v.GetBool("RATE_LIMIT_ENABLED"),

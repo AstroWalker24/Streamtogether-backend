@@ -82,6 +82,14 @@ func NewRedis(cause error) *AppError {
 	}
 }
 
+func NewTimeout(message string) *AppError {
+    return &AppError{
+        Code:       CodeTimeout,
+        Message:    message,
+        HTTPStatus: http.StatusGatewayTimeout,
+    }
+}
+
 func Wrap(err error, message string) *AppError {
 	if appErr, ok := err.(*AppError); ok {
 		return appErr

@@ -8,6 +8,7 @@ import (
 	"github.com/AstroWalker24/Streamtogether-backend/internal/database"
 	"github.com/AstroWalker24/Streamtogether-backend/internal/health"
 	"github.com/AstroWalker24/Streamtogether-backend/internal/logger"
+	"github.com/AstroWalker24/Streamtogether-backend/internal/middleware"
 	redisx "github.com/AstroWalker24/Streamtogether-backend/internal/redis"
 	"github.com/AstroWalker24/Streamtogether-backend/internal/routes"
 	"github.com/AstroWalker24/Streamtogether-backend/internal/server"
@@ -52,6 +53,12 @@ func New() (*App, error) {
 		db.Close()
 		return nil, fmt.Errorf("app: init server: %w", err)
 	}
+
+	mwRegistry := middleware.NewRegistry(middleware.Deps{
+		Config: cfg,
+		Logger: log,
+	})
+	mwRegistry.Register(srv.App())
 
 	// 6. Health checkers — required dependencies that must be up for /ready
 	checkers := []health.Checker{

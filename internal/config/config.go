@@ -21,6 +21,7 @@ type Config struct {
 	JWT        JWTConfig
 	Logging    LoggingConfig
 	CORS       CORSConfig
+	Middleware MiddlewareConfig
 	RateLimit  RateLimitConfig
 	Swagger    SwaggerConfig
 	Monitoring MonitoringConfig
@@ -101,6 +102,17 @@ type CORSConfig struct {
 	AllowedOrigins []string
 	AllowedMethods []string
 	AllowedHeaders []string
+	AllowCredentials bool
+    ExposeHeaders    []string
+    MaxAge           int
+}
+
+type MiddlewareConfig struct {
+    RequestTimeout        time.Duration
+    CompressionEnabled    bool
+    ContentSecurityPolicy string
+    HSTSEnabled           bool
+    HSTSMaxAge            int // seconds
 }
 
 type RateLimitConfig struct {
