@@ -79,6 +79,7 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("POSTGRES_MAX_OPEN_CONNS", 25)
 	v.SetDefault("POSTGRES_MAX_IDLE_CONNS", 10)
 	v.SetDefault("POSTGRES_CONN_MAX_LIFETIME", "30m")
+	v.SetDefault("POSTGRES_MIGRATION_DIR", "internal/database/migrations/postgres")
 
 	v.SetDefault("REDIS_HOST", "localhost")
 	v.SetDefault("REDIS_PORT", 6379)
@@ -212,6 +213,7 @@ func populate(v *viper.Viper, env Environment) (*Config, error) {
 			MaxOpenConns:    v.GetInt("POSTGRES_MAX_OPEN_CONNS"),
 			MaxIdleConns:    v.GetInt("POSTGRES_MAX_IDLE_CONNS"),
 			ConnMaxLifetime: connMaxLifetime,
+			MigrationDir:    v.GetString("POSTGRES_MIGRATION_DIR"),
 		},
 		Redis: RedisConfig{
 			Host:         v.GetString("REDIS_HOST"),

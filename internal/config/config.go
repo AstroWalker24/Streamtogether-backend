@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"time"
+	"net/url"
 )
 
 type Environment string
@@ -63,10 +64,25 @@ type DatabaseConfig struct {
 	MaxOpenConns    int
 	MaxIdleConns    int
 	ConnMaxLifetime time.Duration
+	MigrationDir    string
 }
 
 func (db DatabaseConfig) DSN() string {
 	return fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s", db.Host, db.Port, db.User, db.Password, db.Database, db.SSLMode)
+}
+
+// URL returns a postgres:// connection URL suitable for golang-migrate.
+func (db DatabaseConfig) URL() string {
+    u := &url.URL{
+        Scheme: "postgres",
+        User:   url.UserPassword(db.User, db.Password),
+        Host:   fmt.Sprintf("%s:%d", db.Host, db.Port),
+        Path:   db.Database,
+        RawQuery: url.Values{
+            "sslmode": []string{db.SSLMode},
+        }.Encode(),
+    }
+    return u.String()
 }
 
 type RedisConfig struct {
