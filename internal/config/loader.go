@@ -209,7 +209,7 @@ func populate(v *viper.Viper, env Environment) (*Config, error) {
 			User:            v.GetString("POSTGRES_USER"),
 			Password:        v.GetString("POSTGRES_PASSWORD"),
 			Database:        v.GetString("POSTGRES_DB"),
-			SSLMode:         v.GetString("POSTGRES_SSLMODE"),
+			SSLMode:         v.GetString ("POSTGRES_SSLMODE"),
 			MaxOpenConns:    v.GetInt("POSTGRES_MAX_OPEN_CONNS"),
 			MaxIdleConns:    v.GetInt("POSTGRES_MAX_IDLE_CONNS"),
 			ConnMaxLifetime: connMaxLifetime,
