@@ -122,6 +122,14 @@ func validateJWT(j JWTConfig) []error {
 		errs = append(errs, errors.New("jwt.secret must not be empty"))
 	}
 
+	// Algorithm must be explicitly declared and must be in the supported set.
+	// This prevents silent fallback to a weaker or attacker-chosen algorithm.
+	if j.Algorithm == "" {
+		errs = append(errs, errors.New("jwt.algorithm must not be empty"))
+	} else if j.Algorithm != "HS256" {
+		errs = append(errs, fmt.Errorf("jwt.algorithm %q is not supported; only HS256 is currently accepted", j.Algorithm))
+	}
+
 	if j.AccessTokenExpiry <= 0 {
 		errs = append(errs, fmt.Errorf("jwt.access_token_expiry %d must be greater than 0", j.AccessTokenExpiry))
 	}
@@ -129,6 +137,11 @@ func validateJWT(j JWTConfig) []error {
 	if j.RefreshTokenExpiry <= 0 {
 		errs = append(errs, fmt.Errorf("jwt.refresh_token_expiry %d must be greater than 0", j.RefreshTokenExpiry))
 	}
+
+	if j.ClockSkew < 0 {
+		errs = append(errs, fmt.Errorf("jwt.clock_skew must not be negative"))
+	}
+
 	return errs
 }
 

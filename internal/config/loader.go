@@ -94,6 +94,8 @@ func setDefaults(v *viper.Viper) {
 
 	v.SetDefault("JWT_ACCESS_TOKEN_EXPIRY", "15m")
 	v.SetDefault("JWT_REFRESH_TOKEN_EXPIRY", "168h")
+	v.SetDefault("JWT_ALGORITHM", "HS256")
+	v.SetDefault("JWT_CLOCK_SKEW", "0s")
 
 	v.SetDefault("LOG_LEVEL", "debug")
 	v.SetDefault("LOG_FORMAT", "json")
@@ -186,6 +188,10 @@ func populate(v *viper.Viper, env Environment) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	clockSkew, err := parseDuration(v, "JWT_CLOCK_SKEW")
+	if err != nil {
+		return nil, err
+	}
 	rateLimitDuration, err := parseDuration(v, "RATE_LIMIT_DURATION")
 	if err != nil {
 		return nil, err
@@ -237,8 +243,12 @@ func populate(v *viper.Viper, env Environment) (*Config, error) {
 		},
 		JWT: JWTConfig{
 			Secret:             v.GetString("JWT_SECRET"),
+			Algorithm:          v.GetString("JWT_ALGORITHM"),
+			Issuer:             v.GetString("JWT_ISSUER"),
+			Audience:           v.GetString("JWT_AUDIENCE"),
 			AccessTokenExpiry:  accessExpiry,
 			RefreshTokenExpiry: refreshExpiry,
+			ClockSkew:          clockSkew,
 		},
 		Logging: LoggingConfig{
 			Level:  v.GetString("LOG_LEVEL"),

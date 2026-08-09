@@ -106,8 +106,12 @@ func (r RedisConfig) Address() string {
 
 type JWTConfig struct {
 	Secret             string
+	Algorithm          string // signing algorithm; only "HS256" is accepted
+	Issuer             string // "iss" claim; validation skipped when empty
+	Audience           string // "aud" claim; validation skipped when empty
 	AccessTokenExpiry  time.Duration
 	RefreshTokenExpiry time.Duration
+	ClockSkew          time.Duration // symmetric tolerance for clock drift
 }
 
 type LoggingConfig struct {
