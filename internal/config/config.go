@@ -2,8 +2,8 @@ package config
 
 import (
 	"fmt"
-	"time"
 	"net/url"
+	"time"
 )
 
 type Environment string
@@ -27,6 +27,7 @@ type Config struct {
 	Swagger    SwaggerConfig
 	Monitoring MonitoringConfig
 	Features   FeaturesConfig
+	Password   PasswordConfig
 }
 
 type AppConfig struct {
@@ -73,16 +74,16 @@ func (db DatabaseConfig) DSN() string {
 
 // URL returns a postgres:// connection URL suitable for golang-migrate.
 func (db DatabaseConfig) URL() string {
-    u := &url.URL{
-        Scheme: "postgres",
-        User:   url.UserPassword(db.User, db.Password),
-        Host:   fmt.Sprintf("%s:%d", db.Host, db.Port),
-        Path:   db.Database,
-        RawQuery: url.Values{
-            "sslmode": []string{db.SSLMode},
-        }.Encode(),
-    }
-    return u.String()
+	u := &url.URL{
+		Scheme: "postgres",
+		User:   url.UserPassword(db.User, db.Password),
+		Host:   fmt.Sprintf("%s:%d", db.Host, db.Port),
+		Path:   db.Database,
+		RawQuery: url.Values{
+			"sslmode": []string{db.SSLMode},
+		}.Encode(),
+	}
+	return u.String()
 }
 
 type RedisConfig struct {
@@ -115,20 +116,20 @@ type LoggingConfig struct {
 }
 
 type CORSConfig struct {
-	AllowedOrigins []string
-	AllowedMethods []string
-	AllowedHeaders []string
+	AllowedOrigins   []string
+	AllowedMethods   []string
+	AllowedHeaders   []string
 	AllowCredentials bool
-    ExposeHeaders    []string
-    MaxAge           int
+	ExposeHeaders    []string
+	MaxAge           int
 }
 
 type MiddlewareConfig struct {
-    RequestTimeout        time.Duration
-    CompressionEnabled    bool
-    ContentSecurityPolicy string
-    HSTSEnabled           bool
-    HSTSMaxAge            int // seconds
+	RequestTimeout        time.Duration
+	CompressionEnabled    bool
+	ContentSecurityPolicy string
+	HSTSEnabled           bool
+	HSTSMaxAge            int // seconds
 }
 
 type RateLimitConfig struct {
@@ -149,4 +150,13 @@ type FeaturesConfig struct {
 	Chat  bool
 	Voice bool
 	AI    bool
+}
+
+// PasswordConfig holds Argon2id hashing parameters.
+type PasswordConfig struct {
+	Memory      uint32
+	Iterations  uint32
+	Parallelism uint8
+	SaltLength  uint32
+	KeyLength   uint32
 }

@@ -15,6 +15,7 @@ func Validate(cfg *Config) error {
 	errs = append(errs, validateJWT(cfg.JWT)...)
 	errs = append(errs, validateLogging(cfg.Logging)...)
 	errs = append(errs, validateRateLimit(cfg.RateLimit)...)
+	errs = append(errs, validatePassword(cfg.Password)...)
 
 	if len(errs) > 0 {
 		return fmt.Errorf("validation failed: %v", errs)
@@ -32,7 +33,7 @@ func validateApp(a AppConfig) []error {
 	case EnvDevelopment, EnvTest, EnvProduction:
 		// valid
 	default:
-		errs = append(errs,fmt.Errorf("app.environment %q is not one of: development, test, production", a.Environment))
+		errs = append(errs, fmt.Errorf("app.environment %q is not one of: development, test, production", a.Environment))
 	}
 
 	if a.Port < 1 || a.Port > 65535 {
@@ -64,16 +65,16 @@ func validateServer(s ServerConfig) []error {
 		errs = append(errs, fmt.Errorf("server.shutdown_timeout %d must be greater than 0", s.ShutdownTimeout))
 	}
 
-	return errs 
+	return errs
 }
 
 func validateDatabase(db DatabaseConfig) []error {
-	var errs []error 
+	var errs []error
 
 	if db.Host == "" {
 		errs = append(errs, errors.New("database.host must not be empty"))
 	}
-	
+
 	if db.Port < 1 || db.Port > 65535 {
 		errs = append(errs, fmt.Errorf("database.port %d is not a valid port number", db.Port))
 	}
@@ -100,7 +101,7 @@ func validateDatabase(db DatabaseConfig) []error {
 }
 
 func validateRedis(r RedisConfig) []error {
-	var errs []error 
+	var errs []error
 
 	if r.Host == "" {
 		errs = append(errs, errors.New("redis.host must not be empty"))
@@ -118,13 +119,13 @@ func validateJWT(j JWTConfig) []error {
 	var errs []error
 
 	if j.Secret == "" {
-		errs = append(errs, errors.New("jwt.secret must not be empty"))	
+		errs = append(errs, errors.New("jwt.secret must not be empty"))
 	}
 
 	if j.AccessTokenExpiry <= 0 {
 		errs = append(errs, fmt.Errorf("jwt.access_token_expiry %d must be greater than 0", j.AccessTokenExpiry))
 	}
-	
+
 	if j.RefreshTokenExpiry <= 0 {
 		errs = append(errs, fmt.Errorf("jwt.refresh_token_expiry %d must be greater than 0", j.RefreshTokenExpiry))
 	}
@@ -134,10 +135,10 @@ func validateJWT(j JWTConfig) []error {
 func validateLogging(l LoggingConfig) []error {
 	var errs []error
 	switch l.Level {
-		case "debug", "info", "warn", "error":
-			// valid
-		default:
-			errs = append(errs, fmt.Errorf("logging.level %q is not one of: debug, info, warn, error", l.Level))
+	case "debug", "info", "warn", "error":
+		// valid
+	default:
+		errs = append(errs, fmt.Errorf("logging.level %q is not one of: debug, info, warn, error", l.Level))
 	}
 
 	switch l.Format {
@@ -159,6 +160,26 @@ func validateRateLimit(r RateLimitConfig) []error {
 		if r.Duration <= 0 {
 			errs = append(errs, fmt.Errorf("ratelimit.duration %d must be greater than 0", r.Duration))
 		}
+	}
+	return errs
+}
+
+func validatePassword(p PasswordConfig) []error {
+	var errs []error
+	if p.Memory == 0 {
+		errs = append(errs, errors.New("password.memory must be greater than 0"))
+	}
+	if p.Iterations == 0 {
+		errs = append(errs, errors.New("password.iterations must be greater than 0"))
+	}
+	if p.Parallelism == 0 {
+		errs = append(errs, errors.New("password.parallelism must be greater than 0"))
+	}
+	if p.SaltLength < 16 {
+		errs = append(errs, errors.New("password.salt_length must be at least 16 bytes"))
+	}
+	if p.KeyLength < 16 {
+		errs = append(errs, errors.New("password.key_length must be at least 16 bytes"))
 	}
 	return errs
 }

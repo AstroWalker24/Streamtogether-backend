@@ -121,6 +121,13 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("FEATURE_VOICE", false)
 	v.SetDefault("FEATURE_AI", false)
 
+	// Argon2id – OWASP recommended minimums
+	v.SetDefault("PASSWORD_MEMORY", 65536) // 64 MiB
+	v.SetDefault("PASSWORD_ITERATIONS", 3)
+	v.SetDefault("PASSWORD_PARALLELISM", 2)
+	v.SetDefault("PASSWORD_SALT_LENGTH", 16)
+	v.SetDefault("PASSWORD_KEY_LENGTH", 32)
+
 	v.SetDefault("SERVER_BODY_LIMIT", 4*1024*1024)
 	v.SetDefault("SERVER_READ_BUFFER_SIZE", 4096)
 	v.SetDefault("SERVER_WRITE_BUFFER_SIZE", 4096)
@@ -209,7 +216,7 @@ func populate(v *viper.Viper, env Environment) (*Config, error) {
 			User:            v.GetString("POSTGRES_USER"),
 			Password:        v.GetString("POSTGRES_PASSWORD"),
 			Database:        v.GetString("POSTGRES_DB"),
-			SSLMode:         v.GetString ("POSTGRES_SSLMODE"),
+			SSLMode:         v.GetString("POSTGRES_SSLMODE"),
 			MaxOpenConns:    v.GetInt("POSTGRES_MAX_OPEN_CONNS"),
 			MaxIdleConns:    v.GetInt("POSTGRES_MAX_IDLE_CONNS"),
 			ConnMaxLifetime: connMaxLifetime,
@@ -267,6 +274,13 @@ func populate(v *viper.Viper, env Environment) (*Config, error) {
 			Chat:  v.GetBool("FEATURE_CHAT"),
 			Voice: v.GetBool("FEATURE_VOICE"),
 			AI:    v.GetBool("FEATURE_AI"),
+		},
+		Password: PasswordConfig{
+			Memory:      uint32(v.GetInt("PASSWORD_MEMORY")),
+			Iterations:  uint32(v.GetInt("PASSWORD_ITERATIONS")),
+			Parallelism: uint8(v.GetInt("PASSWORD_PARALLELISM")),
+			SaltLength:  uint32(v.GetInt("PASSWORD_SALT_LENGTH")),
+			KeyLength:   uint32(v.GetInt("PASSWORD_KEY_LENGTH")),
 		},
 	}
 	return cfg, nil
