@@ -137,6 +137,10 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("SERVER_STRICT_ROUTING", false)
 	v.SetDefault("SERVER_IMMUTABLE", false)
 
+	// Google OAuth 2.0 / OIDC
+	v.SetDefault("GOOGLE_OAUTH_REDIRECT_URI", "")
+	v.SetDefault("GOOGLE_OAUTH_SCOPES", "")
+
 }
 
 func populate(v *viper.Viper, env Environment) (*Config, error) {
@@ -291,6 +295,12 @@ func populate(v *viper.Viper, env Environment) (*Config, error) {
 			Parallelism: uint8(v.GetInt("PASSWORD_PARALLELISM")),
 			SaltLength:  uint32(v.GetInt("PASSWORD_SALT_LENGTH")),
 			KeyLength:   uint32(v.GetInt("PASSWORD_KEY_LENGTH")),
+		},
+		GoogleOAuth: GoogleOAuthConfig{
+			ClientID:     v.GetString("GOOGLE_OAUTH_CLIENT_ID"),
+			ClientSecret: v.GetString("GOOGLE_OAUTH_CLIENT_SECRET"),
+			RedirectURI:  v.GetString("GOOGLE_OAUTH_REDIRECT_URI"),
+			Scopes:       splitCSV(v.GetString("GOOGLE_OAUTH_SCOPES")),
 		},
 	}
 	return cfg, nil

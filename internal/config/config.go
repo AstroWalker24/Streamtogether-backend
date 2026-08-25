@@ -15,27 +15,29 @@ const (
 )
 
 type Config struct {
-	App        AppConfig
-	Server     ServerConfig
-	Database   DatabaseConfig
-	Redis      RedisConfig
-	JWT        JWTConfig
-	Logging    LoggingConfig
-	CORS       CORSConfig
-	Middleware MiddlewareConfig
-	RateLimit  RateLimitConfig
-	Swagger    SwaggerConfig
-	Monitoring MonitoringConfig
-	Features   FeaturesConfig
-	Password   PasswordConfig
+	App         AppConfig
+	Server      ServerConfig
+	Database    DatabaseConfig
+	Redis       RedisConfig
+	JWT         JWTConfig
+	Logging     LoggingConfig
+	CORS        CORSConfig
+	Middleware  MiddlewareConfig
+	RateLimit   RateLimitConfig
+	Swagger     SwaggerConfig
+	Monitoring  MonitoringConfig
+	Features    FeaturesConfig
+	Password    PasswordConfig
+	GoogleOAuth GoogleOAuthConfig
 }
 
 type AppConfig struct {
-	Name        string
-	Environment Environment
-	Version     string
-	Host        string
-	Port        int
+	Name              string
+	Environment       Environment
+	Version           string
+	Host              string
+	Port              int
+	MaxDevicesPerUser int // 0 means no limit
 }
 
 func (a AppConfig) Address() string {
@@ -105,13 +107,14 @@ func (r RedisConfig) Address() string {
 }
 
 type JWTConfig struct {
-	Secret             string
-	Algorithm          string // signing algorithm; only "HS256" is accepted
-	Issuer             string // "iss" claim; validation skipped when empty
-	Audience           string // "aud" claim; validation skipped when empty
-	AccessTokenExpiry  time.Duration
-	RefreshTokenExpiry time.Duration
-	ClockSkew          time.Duration // symmetric tolerance for clock drift
+	Secret                       string
+	Algorithm                    string // signing algorithm; only "HS256" is accepted
+	Issuer                       string // "iss" claim; validation skipped when empty
+	Audience                     string // "aud" claim; validation skipped when empty
+	AccessTokenExpiry            time.Duration
+	RefreshTokenExpiry           time.Duration
+	RefreshTokenRememberMeExpiry time.Duration // extended expiry when RememberMe is true
+	ClockSkew                    time.Duration // symmetric tolerance for clock drift
 }
 
 type LoggingConfig struct {
@@ -163,4 +166,12 @@ type PasswordConfig struct {
 	Parallelism uint8
 	SaltLength  uint32
 	KeyLength   uint32
+}
+
+// GoogleOAuthConfig holds the credentials and endpoints for Google OAuth 2.0 / OIDC.
+type GoogleOAuthConfig struct {
+	ClientID     string
+	ClientSecret string
+	RedirectURI  string
+	Scopes       []string // additional scopes beyond openid, email, profile
 }

@@ -53,6 +53,11 @@ type RoleRepository interface {
 
 	// HasRole reports whether a specific role is currently assigned to a user.
 	HasRole(ctx context.Context, userID, roleID uuid.UUID) (bool, error)
+
+	// GetUserPermissions returns the deduplicated set of permission names granted
+	// to a user through all of their role assignments. It resolves the full
+	// user → user_roles → roles → role_permissions → permissions chain in one query.
+	GetUserPermissions(ctx context.Context, userID uuid.UUID) ([]string, error)
 }
 
 // ─── implementation ───────────────────────────────────────────────────────────
@@ -304,4 +309,36 @@ func (r *roleRepository) HasRole(ctx context.Context, userID, roleID uuid.UUID) 
 		return false, repo.MapError(err)
 	}
 	return exists, nil
+}
+
+// sqlGetUserPermissions resolves the full user → roles → permissions chain in
+// a single query and returns distinct permission names, ordered alphabetically.
+const sqlGetUserPermissions = `
+SELECT DISTINCT p.name
+FROM   permissions p
+JOIN   role_permissions rp ON rp.permission_id = p.id
+JOIN   user_roles ur       ON ur.role_id        = rp.role_id
+WHERE  ur.user_id = $1
+ORDER  BY p.name ASC`
+
+func (r *roleRepository) GetUserPermissions(ctx context.Context, userID uuid.UUID) ([]string, error) {
+	rows, err := r.Pool().Query(ctx, sqlGetUserPermissions, userID)
+	if err != nil {
+		return nil, repo.MapError(err)
+	}
+	defer rows.Close()
+
+	var names []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, repo.MapError(err)
+		}
+		names = append(names, name)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, repo.MapError(err)
+	}
+
+	return names, nil
 }
