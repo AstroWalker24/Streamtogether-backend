@@ -26,7 +26,7 @@ type FriendshipService interface {
 	EstablishFriendship(ctx context.Context, userA, userB uuid.UUID, opts ...repo.Option) (*domain.Friendship, error)
 
 	// AreFriends reports whether an established friendship exists between two users.
-	AreFriends(ctx context.Context, userA, userB uuid.UUID) (bool, error)
+	AreFriends(ctx context.Context, userA, userB uuid.UUID, opts ...repo.Option) (bool, error)
 
 	// GetFriends returns paginated friendships involving userID, excluding friends
 	// whose accounts are no longer active.
@@ -57,6 +57,11 @@ func (s *friendshipService) EstablishFriendship(ctx context.Context, userA, user
 	if err := s.requireActiveUser(ctx, userB); err != nil {
 		return nil, err
 	}
+	if alreadyFriends, err := s.AreFriends(ctx, userA, userB, opts...); err != nil {
+		return nil, err
+	} else if alreadyFriends {
+		return nil, friendserrors.NewAlreadyFriends()
+	}
 
 	firstUserID, secondUserID := canonicalPair(userA, userB)
 	friendship := &domain.Friendship{
@@ -75,7 +80,7 @@ func (s *friendshipService) EstablishFriendship(ctx context.Context, userA, user
 	return created, nil
 }
 
-func (s *friendshipService) AreFriends(ctx context.Context, userA, userB uuid.UUID) (bool, error) {
+func (s *friendshipService) AreFriends(ctx context.Context, userA, userB uuid.UUID, opts ...repo.Option) (bool, error) {
 	if userA == uuid.Nil || userB == uuid.Nil {
 		return false, friendserrors.NewInvalidUserID()
 	}
@@ -84,7 +89,7 @@ func (s *friendshipService) AreFriends(ctx context.Context, userA, userB uuid.UU
 	}
 
 	firstUserID, secondUserID := canonicalPair(userA, userB)
-	exists, err := s.friends.ExistsByUserPair(ctx, firstUserID, secondUserID)
+	exists, err := s.friends.ExistsByUserPair(ctx, firstUserID, secondUserID, opts...)
 	if err != nil {
 		return false, mapFriendshipRepoError(err)
 	}

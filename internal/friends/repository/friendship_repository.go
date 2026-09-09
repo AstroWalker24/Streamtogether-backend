@@ -28,7 +28,7 @@ type FriendshipRepository interface {
 
 	// ExistsByUserPair reports whether an established friendship exists between
 	// two users regardless of argument order.
-	ExistsByUserPair(ctx context.Context, firstUserID, secondUserID uuid.UUID) (bool, error)
+	ExistsByUserPair(ctx context.Context, firstUserID, secondUserID uuid.UUID, opts ...repo.Option) (bool, error)
 
 	// GetFriends returns paginated friendships involving userID, ordered by
 	// creation time descending and then ID descending.
@@ -91,9 +91,10 @@ SELECT EXISTS (
         OR (first_user_id = $2 AND second_user_id = $1)
 )`
 
-func (r *friendshipRepository) ExistsByUserPair(ctx context.Context, firstUserID, secondUserID uuid.UUID) (bool, error) {
+func (r *friendshipRepository) ExistsByUserPair(ctx context.Context, firstUserID, secondUserID uuid.UUID, opts ...repo.Option) (bool, error) {
 	var exists bool
-	if err := r.Pool().QueryRow(ctx, sqlFriendshipExistsByUserPair, firstUserID, secondUserID).Scan(&exists); err != nil {
+	o := repo.NewOptions(opts...)
+	if err := r.Exec(o).QueryRow(ctx, sqlFriendshipExistsByUserPair, firstUserID, secondUserID).Scan(&exists); err != nil {
 		return false, repo.MapError(err)
 	}
 	return exists, nil

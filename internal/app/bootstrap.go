@@ -11,6 +11,9 @@ import (
 	"github.com/AstroWalker24/Streamtogether-backend/internal/database"
 	friendshandler "github.com/AstroWalker24/Streamtogether-backend/internal/friends/handler"
 	friendsrepo "github.com/AstroWalker24/Streamtogether-backend/internal/friends/repository"
+	friendrequesthandler "github.com/AstroWalker24/Streamtogether-backend/internal/friends/requests/handler"
+	friendrequestrepo "github.com/AstroWalker24/Streamtogether-backend/internal/friends/requests/repository"
+	friendrequestsvc "github.com/AstroWalker24/Streamtogether-backend/internal/friends/requests/service"
 	friendsvc "github.com/AstroWalker24/Streamtogether-backend/internal/friends/service"
 	"github.com/AstroWalker24/Streamtogether-backend/internal/health"
 	"github.com/AstroWalker24/Streamtogether-backend/internal/logger"
@@ -109,9 +112,12 @@ func New() (*App, error) {
 	friendsRepo := friendsrepo.NewFriendshipRepository(db, log)
 	friendsSvc := friendsvc.NewFriendshipService(friendsRepo, userSvc)
 	friendsHdlr := friendshandler.NewHandler(friendsSvc)
+	friendRequestRepo := friendrequestrepo.NewFriendRequestRepository(db, log)
+	friendRequestSvc := friendrequestsvc.NewFriendRequestService(friendRequestRepo, userSvc, friendsSvc, db)
+	friendRequestHdlr := friendrequesthandler.NewHandler(friendRequestSvc)
 
 	// 11. Route registration
-	routes.Register(srv.App(), healthHandler, profileHdlr, friendsHdlr, requireAuth)
+	routes.Register(srv.App(), healthHandler, profileHdlr, friendsHdlr, friendRequestHdlr, requireAuth)
 
 	return &App{
 		cfg:    cfg,

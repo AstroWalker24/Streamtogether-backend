@@ -28,6 +28,7 @@ type FriendRequestService interface {
 	CancelFriendRequest(ctx context.Context, actorUserID, requestID uuid.UUID) (*domain.FriendRequest, error)
 	GetIncomingRequests(ctx context.Context, actorUserID uuid.UUID, opts ...repo.Option) ([]*domain.FriendRequest, repo.PageMeta, error)
 	GetOutgoingRequests(ctx context.Context, actorUserID uuid.UUID, opts ...repo.Option) ([]*domain.FriendRequest, repo.PageMeta, error)
+	GetFriendRequestByID(ctx context.Context, actorUserID, requestID uuid.UUID) (*domain.FriendRequest, error)
 }
 
 type friendRequestService struct {
@@ -65,7 +66,7 @@ func (s *friendRequestService) SendFriendRequest(ctx context.Context, requesterU
 		return nil, mapRequestRepoError(err)
 	}
 
-	alreadyFriends, err := s.friendships.AreFriends(ctx, requesterUserID, recipientUserID)
+	alreadyFriends, err := s.friendships.AreFriends(ctx, requesterUserID, recipientUserID, txOpt)
 	if err != nil {
 		return nil, err
 	}
@@ -192,6 +193,23 @@ func (s *friendRequestService) GetOutgoingRequests(ctx context.Context, actorUse
 		return nil, repo.PageMeta{}, mapRequestRepoError(err)
 	}
 	return requests, pageMeta, nil
+}
+
+func (s *friendRequestService) GetFriendRequestByID(ctx context.Context, actorUserID, requestID uuid.UUID) (*domain.FriendRequest, error) {
+	if err := validateOperationIDs(actorUserID, requestID); err != nil {
+		return nil, err
+	}
+	if err := s.requireActiveUser(ctx, actorUserID); err != nil {
+		return nil, err
+	}
+	request, err := s.requests.FindByID(ctx, requestID)
+	if err != nil {
+		return nil, mapRequestRepoError(err)
+	}
+	if request.RequesterUserID != actorUserID && request.RecipientUserID != actorUserID {
+		return nil, requesterrors.NewUnauthorizedTransition()
+	}
+	return request, nil
 }
 
 func (s *friendRequestService) acceptLocked(ctx context.Context, tx pgx.Tx, actorUserID uuid.UUID, request *domain.FriendRequest) (*domain.FriendRequest, error) {
