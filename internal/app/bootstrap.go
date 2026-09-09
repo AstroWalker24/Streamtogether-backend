@@ -4,13 +4,25 @@ import (
 	"context"
 	"fmt"
 
+	authrepo "github.com/AstroWalker24/Streamtogether-backend/internal/auth/repository"
+	authsvc "github.com/AstroWalker24/Streamtogether-backend/internal/auth/service"
+	"github.com/AstroWalker24/Streamtogether-backend/internal/auth/token"
 	"github.com/AstroWalker24/Streamtogether-backend/internal/config"
 	"github.com/AstroWalker24/Streamtogether-backend/internal/database"
+	friendshandler "github.com/AstroWalker24/Streamtogether-backend/internal/friends/handler"
+	friendsrepo "github.com/AstroWalker24/Streamtogether-backend/internal/friends/repository"
+	friendsvc "github.com/AstroWalker24/Streamtogether-backend/internal/friends/service"
 	"github.com/AstroWalker24/Streamtogether-backend/internal/health"
 	"github.com/AstroWalker24/Streamtogether-backend/internal/logger"
 	"github.com/AstroWalker24/Streamtogether-backend/internal/middleware"
+	profilehandler "github.com/AstroWalker24/Streamtogether-backend/internal/profile/handler"
+	profilerepo "github.com/AstroWalker24/Streamtogether-backend/internal/profile/repository"
+	profilesvc "github.com/AstroWalker24/Streamtogether-backend/internal/profile/service"
 	redisx "github.com/AstroWalker24/Streamtogether-backend/internal/redis"
 	"github.com/AstroWalker24/Streamtogether-backend/internal/routes"
+	jwtpkg "github.com/AstroWalker24/Streamtogether-backend/internal/security/jwt"
+	"github.com/AstroWalker24/Streamtogether-backend/internal/security/password"
+	"github.com/AstroWalker24/Streamtogether-backend/internal/security/random"
 	"github.com/AstroWalker24/Streamtogether-backend/internal/server"
 )
 
@@ -70,8 +82,36 @@ func New() (*App, error) {
 	healthSvc := health.NewService(cfg, log, checkers...)
 	healthHandler := health.NewHandler(healthSvc)
 
-	// 8. Route registration
-	routes.Register(srv.App(), healthHandler)
+	// 8. Token manager — required by the auth middleware
+	rng := random.New()
+	jwtMgr, err := jwtpkg.New(cfg.JWT, rng)
+	if err != nil {
+		_ = redisInstance.Close()
+		db.Close()
+		return nil, fmt.Errorf("app: init jwt manager: %w", err)
+	}
+	tokenMgr, err := token.New(jwtMgr, cfg.JWT)
+	if err != nil {
+		_ = redisInstance.Close()
+		db.Close()
+		return nil, fmt.Errorf("app: init token manager: %w", err)
+	}
+	requireAuth := middleware.NewAuthRequired(tokenMgr)
+
+	// 9. Profile module
+	profileRepo := profilerepo.NewProfileRepository(db, log)
+	profileSvc := profilesvc.NewProfileService(profileRepo)
+	profileHdlr := profilehandler.NewHandler(profileSvc)
+
+	// 10. Friends module
+	userRepo := authrepo.NewUserRepository(db, log)
+	userSvc := authsvc.NewUserService(userRepo, password.New(cfg.Password))
+	friendsRepo := friendsrepo.NewFriendshipRepository(db, log)
+	friendsSvc := friendsvc.NewFriendshipService(friendsRepo, userSvc)
+	friendsHdlr := friendshandler.NewHandler(friendsSvc)
+
+	// 11. Route registration
+	routes.Register(srv.App(), healthHandler, profileHdlr, friendsHdlr, requireAuth)
 
 	return &App{
 		cfg:    cfg,
